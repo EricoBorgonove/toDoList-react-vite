@@ -1,121 +1,95 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useMemo } from "react";
+import Header from "./components/Header";
+import Stats from "./components/Stats";
+import TaskForm from "./components/TaskForm";
+import FilterButtons from "./components/FilterButtons";
+import TaskList from "./components/TaskList";
+import ThemeToggle from "./components/ThemeToggle";
+import { initialTasks } from "./data/initialTasks";
+import useLocalStorage from "./hooks/useLocalStorage";
+import useTheme from "./hooks/useTheme";
+import {
+  addNewTask,
+  toggleTaskById,
+  removeTaskById,
+  editTaskById,
+  clearCompletedTasks,
+} from "./utils/taskHelpers";
+import { useState } from "react";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [tasks, setTasks] = useLocalStorage("tasks", initialTasks);
+  const [filter, setFilter] = useState("all");
+  const { theme, toggleTheme } = useTheme();
+
+  function addTask(text) {
+    setTasks((current) => addNewTask(current, text));
+  }
+
+  function toggleTask(id) {
+    setTasks((current) => toggleTaskById(current, id));
+  }
+
+  function removeTask(id) {
+    setTasks((current) => removeTaskById(current, id));
+  }
+
+  function editTask(id, newText) {
+    setTasks((current) => editTaskById(current, id, newText));
+  }
+
+  function clearCompleted() {
+    setTasks((current) => clearCompletedTasks(current));
+  }
+
+  const filteredTasks = useMemo(() => {
+    if (filter === "pending") return tasks.filter((task) => !task.done);
+    if (filter === "done") return tasks.filter((task) => task.done);
+    return tasks;
+  }, [tasks, filter]);
+
+  const total = tasks.length;
+  const completed = tasks.filter((task) => task.done).length;
+  const pending = total - completed;
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="min-h-screen bg-slate-100 p-6 transition-colors dark:bg-slate-950 md:p-10">
+      <div className="mx-auto max-w-2xl">
+        <div className="rounded-3xl bg-white p-6 shadow-xl transition-colors dark:bg-slate-900 md:p-8">
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <Header />
+            <ThemeToggle theme={theme} onToggleTheme={toggleTheme} />
+          </div>
 
-      <div className="ticks"></div>
+          <div className="mb-8">
+            <Stats total={total} pending={pending} completed={completed} />
+          </div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          <TaskForm onAddTask={addTask} />
+          <FilterButtons filter={filter} setFilter={setFilter} />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          <TaskList
+            tasks={filteredTasks}
+            onToggleTask={toggleTask}
+            onRemoveTask={removeTask}
+            onEditTask={editTask}
+          />
+
+          <div className="mt-6 flex flex-col gap-3 border-t border-slate-200 pt-6 dark:border-slate-700 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-slate-500 dark:text-slate-300">
+              {completed} tarefa(s) concluída(s)
+            </p>
+
+            <button
+              type="button"
+              onClick={clearCompleted}
+              className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+            >
+              Limpar concluídas
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
-
-export default App

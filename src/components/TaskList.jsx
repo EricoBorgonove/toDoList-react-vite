@@ -1,4 +1,4 @@
-import TaskItem from "./TaskItem";
+import TaskItem from "./TaskItem.jsx";
 
 export default function TaskList({ tasks, onToggleTask, onRemoveTask, onEditTask }) {
   if (tasks.length === 0) {
